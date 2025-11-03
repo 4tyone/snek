@@ -1,131 +1,163 @@
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use tower_lsp::jsonrpc::Result;
-use tower_lsp::lsp_types::{
-    InitializeParams, InitializeResult, InitializedParams, ServerCapabilities,
-    CompletionOptions, CompletionParams, CompletionResponse, CompletionItem,
-    CompletionItemKind, InsertTextFormat, Position, Range,
-    request::Request,
-};
-use tower_lsp::{Client, LanguageServer, async_trait};
+//! LSP backend implementation
+//!
+//! This module implements the Language Server Protocol interface
+//! for the Snek LSP server.
 
+use std::sync::Arc;
+
+use arc_swap::ArcSwap;
+use serde::{Deserialize, Serialize};
+use tower_lsp::jsonrpc;
+use tower_lsp::lsp_types::*;
+use tower_lsp::{Client, LanguageServer};
+
+use crate::document_store::DocumentStore;
+use crate::model::ModelClient;
+use crate::snapshot::ContextSnapshot;
+
+/// Request parameters for snek/inline custom method
+#[derive(Debug, Deserialize)]
+pub struct InlineCompletionParams {
+    /// Document URI
+    pub text_document: TextDocumentIdentifier,
+    /// Cursor position
+    pub position: Position,
+}
+
+/// Response for snek/inline custom method
+#[derive(Debug, Serialize)]
+pub struct InlineCompletionResponse {
+    /// Generated completion text
+    pub completion: String,
+}
+
+/// LSP backend state
 pub struct Backend {
-    client: Client,
+    /// LSP client for sending notifications
+    pub client: Client,
+    /// Shared snapshot of session state
+    pub snapshot: Arc<ArcSwap<ContextSnapshot>>,
+    /// Document content tracker
+    pub documents: Arc<DocumentStore>,
+    /// AI model client
+    pub model: Arc<ModelClient>,
 }
 
 impl Backend {
-    pub fn new(client: Client) -> Self {
-        Self { client }
+    /// Create a new backend
+    pub fn new(
+        client: Client,
+        snapshot: Arc<ArcSwap<ContextSnapshot>>,
+        documents: Arc<DocumentStore>,
+        model: Arc<ModelClient>,
+    ) -> Self {
+        Self {
+            client,
+            snapshot,
+            documents,
+            model,
+        }
+    }
+
+    /// Handle custom snek/inline completion request
+    pub async fn handle_inline_completion(
+        &self,
+        params: InlineCompletionParams,
+    ) -> jsonrpc::Result<InlineCompletionResponse> {
+        let uri = params.text_document.uri.to_string();
+        let line = params.position.line;
+        let character = params.position.character;
+
+        eprintln!(
+            "[SNEK] Inline completion request: uri={}, line={}, char={}",
+            uri, line, character
+        );
+
+        // Get prefix/suffix from document store
+        let (prefix, suffix, language) = self
+            .documents
+            .get_context(&uri, line, character)
+            .ok_or_else(|| {
+                eprintln!("[SNEK] ERROR: Document not found in store: {}", uri);
+                jsonrpc::Error::invalid_params("Document not found or position invalid")
+            })?;
+
+        eprintln!(
+            "[SNEK] Context retrieved: language={}, prefix_len={}, suffix_len={}",
+            language,
+            prefix.len(),
+            suffix.len()
+        );
+
+        // Load current snapshot
+        let snapshot = self.snapshot.load();
+
+        // Call AI model
+        let completion = self
+            .model
+            .complete(&snapshot, &prefix, &suffix, &language)
+            .await
+            .map_err(|e| {
+                let error_msg = format!("Model API error: {}", e);
+                eprintln!("[SNEK] {}", error_msg);
+                jsonrpc::Error {
+                    code: jsonrpc::ErrorCode::InternalError,
+                    message: error_msg.into(),
+                    data: None,
+                }
+            })?;
+
+        // Trim leading/trailing whitespace to avoid newline issues
+        let completion = completion.trim_start().to_string();
+        
+        eprintln!("[SNEK] Completion generated: {} chars", completion.len());
+
+        Ok(InlineCompletionResponse { completion })
     }
 }
 
-// Custom inline completion types (LSP 3.18+)
-#[derive(Debug, Serialize, Deserialize)]
-pub struct InlineCompletionParams {
-    pub position: Position,
-    pub context: InlineCompletionContext,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct InlineCompletionContext {
-    #[serde(rename = "triggerKind")]
-    pub trigger_kind: i32,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct InlineCompletionItem {
-    #[serde(rename = "insertText")]
-    pub insert_text: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub range: Option<Range>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct InlineCompletionList {
-    pub items: Vec<InlineCompletionItem>,
-}
-
-// Define custom request for inline completion
-pub struct InlineCompletionRequest;
-
-impl Request for InlineCompletionRequest {
-    type Params = Value;
-    type Result = Value;
-    const METHOD: &'static str = "textDocument/inlineCompletion";
-}
-
-#[async_trait]
+#[tower_lsp::async_trait]
 impl LanguageServer for Backend {
-    async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
-        let capabilities = ServerCapabilities {
-            // Enable standard completions
-            completion_provider: Some(CompletionOptions {
-                trigger_characters: Some(vec![".".to_string(), ":".to_string()]),
-                all_commit_characters: None,
-                resolve_provider: Some(false),
-                work_done_progress_options: Default::default(),
-                completion_item: None,
-            }),
-            ..Default::default()
-        };
-        
+    async fn initialize(&self, _params: InitializeParams) -> jsonrpc::Result<InitializeResult> {
         Ok(InitializeResult {
-            capabilities,
-            server_info: Some(tower_lsp::lsp_types::ServerInfo {
-                name: "Snek LSP".to_string(),
-                version: Some("0.1.0".to_string()),
+            capabilities: ServerCapabilities {
+                text_document_sync: Some(TextDocumentSyncCapability::Kind(
+                    TextDocumentSyncKind::FULL,
+                )),
+                ..Default::default()
+            },
+            server_info: Some(ServerInfo {
+                name: "snek-lsp".to_string(),
+                version: Some(env!("CARGO_PKG_VERSION").to_string()),
             }),
-            ..Default::default()
         })
     }
 
-    async fn initialized(&self, _: InitializedParams) {
+    async fn initialized(&self, _params: InitializedParams) {
         self.client
-            .log_message(
-                tower_lsp::lsp_types::MessageType::INFO,
-                "Snek LSP initialized - ready for inline completions",
-            )
+            .log_message(MessageType::INFO, "Snek LSP initialized")
             .await;
     }
 
-    async fn shutdown(&self) -> Result<()> {
+    async fn shutdown(&self) -> jsonrpc::Result<()> {
         Ok(())
     }
 
-    async fn completion(&self, params: CompletionParams) -> Result<Option<CompletionResponse>> {
-        self.client
-            .log_message(
-                tower_lsp::lsp_types::MessageType::INFO,
-                format!(
-                    "Completion requested at {}:{}",
-                    params.text_document_position.position.line,
-                    params.text_document_position.position.character
-                ),
-            )
-            .await;
+    async fn did_open(&self, params: DidOpenTextDocumentParams) {
+        let doc = params.text_document;
+        self.documents
+            .did_open(doc.uri.to_string(), doc.language_id, doc.text);
+    }
 
-        // Create a dummy completion item that acts as ghost text
-        let completion_item = CompletionItem {
-            label: "Ghost text suggestion".to_string(),
-            label_details: None,
-            kind: Some(CompletionItemKind::SNIPPET),
-            detail: Some("Snek AI completion".to_string()),
-            documentation: None,
-            deprecated: Some(false),
-            preselect: Some(true),
-            sort_text: Some("0".to_string()), // Make it appear first
-            filter_text: None,
-            insert_text: Some("// This is a dummy ghost text from Snek LSP\nfn example_function() {\n    println!(\"Hello from AI completion!\");\n}".to_string()),
-            insert_text_format: Some(InsertTextFormat::PLAIN_TEXT),
-            insert_text_mode: None,
-            text_edit: None,
-            additional_text_edits: None,
-            command: None,
-            commit_characters: None,
-            data: None,
-            tags: None,
-        };
+    async fn did_change(&self, params: DidChangeTextDocumentParams) {
+        let uri = params.text_document.uri.to_string();
+        if let Some(change) = params.content_changes.first() {
+            self.documents.did_change(&uri, change.text.clone());
+        }
+    }
 
-        Ok(Some(CompletionResponse::Array(vec![completion_item])))
+    async fn did_close(&self, params: DidCloseTextDocumentParams) {
+        let uri = params.text_document.uri.to_string();
+        self.documents.did_close(&uri);
     }
 }
