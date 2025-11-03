@@ -5,15 +5,6 @@
 
 use serde::{Deserialize, Serialize};
 
-/// A single message in the chat history
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ChatMessage {
-    /// Message sender role: "system", "user", or "assistant"
-    pub role: String,
-    /// Message text content
-    pub content: String,
-}
-
 /// A code snippet from another file for context
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CodeContext {
@@ -56,10 +47,10 @@ pub struct ContextSnapshot {
     pub version: u64,
     /// Token limits
     pub limits: Limits,
-    /// Ordered chat history
-    pub chat_messages: Vec<ChatMessage>,
+    /// Markdown context from context/ folder
+    pub markdown_context: String,
     /// Code snippets from other files
-    pub code_contexts: Vec<CodeContext>,
+    pub code_snippets: Vec<CodeContext>,
 }
 
 impl Default for ContextSnapshot {
@@ -68,8 +59,8 @@ impl Default for ContextSnapshot {
             session_id: "default".to_string(),
             version: 0,
             limits: Limits::default(),
-            chat_messages: vec![],
-            code_contexts: vec![],
+            markdown_context: String::new(),
+            code_snippets: vec![],
         }
     }
 }

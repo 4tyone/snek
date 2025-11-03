@@ -7,7 +7,7 @@ use anyhow::{Context, Result};
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
 
-use crate::snapshot::{ChatMessage, CodeContext, ContextSnapshot, Limits};
+use crate::snapshot::{CodeContext, ContextSnapshot, Limits};
 
 /// Internal struct for active.json
 #[derive(Deserialize)]
@@ -30,20 +30,12 @@ struct SessionJson {
     updated_at: String,
 }
 
-/// Internal struct for chat.json
+/// Internal struct for code_snippets.json
 #[derive(Deserialize)]
 #[allow(dead_code)]
-struct ChatJson {
+struct CodeSnippetsJson {
     schema: u32,
-    messages: Vec<ChatMessage>,
-}
-
-/// Internal struct for context.json
-#[derive(Deserialize)]
-#[allow(dead_code)]
-struct ContextJson {
-    schema: u32,
-    contexts: Vec<CodeContext>,
+    snippets: Vec<CodeContext>,
 }
 
 /// Find the workspace root by looking for .snek/ directory
@@ -75,11 +67,14 @@ pub fn find_workspace_root() -> Result<PathBuf> {
 
 /// Initialize default session structure
 ///
-/// Creates a default session with empty chat and context.
+/// Creates a default session with context folder and code snippets file.
 fn initialize_default_session(snek_root: &Path) -> Result<()> {
     let session_id = uuid::Uuid::new_v4().to_string();
     let session_dir = snek_root.join("sessions").join(&session_id);
     std::fs::create_dir_all(&session_dir)?;
+
+    // Create context/ folder for markdown files
+    std::fs::create_dir_all(session_dir.join("context"))?;
 
     // Write default session.json
     let session = serde_json::json!({
@@ -95,24 +90,14 @@ fn initialize_default_session(snek_root: &Path) -> Result<()> {
         serde_json::to_string_pretty(&session)?,
     )?;
 
-    // Write empty chat.json
-    let chat = serde_json::json!({
+    // Write empty code_snippets.json
+    let snippets = serde_json::json!({
         "schema": 1,
-        "messages": []
+        "snippets": []
     });
     std::fs::write(
-        session_dir.join("chat.json"),
-        serde_json::to_string_pretty(&chat)?,
-    )?;
-
-    // Write empty context.json
-    let context = serde_json::json!({
-        "schema": 1,
-        "contexts": []
-    });
-    std::fs::write(
-        session_dir.join("context.json"),
-        serde_json::to_string_pretty(&context)?,
+        session_dir.join("code_snippets.json"),
+        serde_json::to_string_pretty(&snippets)?,
     )?;
 
     // Write active.json
@@ -148,26 +133,48 @@ pub fn load_snapshot(session_dir: &Path) -> Result<ContextSnapshot> {
     let session: SessionJson =
         serde_json::from_str(&session_content).context("Failed to parse session.json")?;
 
-    // Read chat.json (optional, default to empty)
-    let chat_path = session_dir.join("chat.json");
-    let messages = if chat_path.exists() {
-        let chat_content =
-            std::fs::read_to_string(&chat_path).context("Failed to read chat.json")?;
-        let chat: ChatJson =
-            serde_json::from_str(&chat_content).context("Failed to parse chat.json")?;
-        chat.messages
-    } else {
-        vec![]
-    };
+    // Read all markdown files from context/ folder
+    let context_dir = session_dir.join("context");
+    let mut markdown_context = String::new();
+    
+    if context_dir.exists() && context_dir.is_dir() {
+        let mut context_files = Vec::new();
+        
+        if let Ok(entries) = std::fs::read_dir(&context_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("md") {
+                    context_files.push(path);
+                }
+            }
+        }
+        
+        // Sort files alphabetically for consistent ordering
+        context_files.sort();
+        
+        // Combine all markdown files with filenames
+        for path in context_files {
+            if let Ok(content) = std::fs::read_to_string(&path) {
+                if !markdown_context.is_empty() {
+                    markdown_context.push_str("\n\n---\n\n");
+                }
+                // Add filename header
+                if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
+                    markdown_context.push_str(&format!("## {}\n\n", filename));
+                }
+                markdown_context.push_str(&content);
+            }
+        }
+    }
 
-    // Read context.json (optional, default to empty)
-    let context_path = session_dir.join("context.json");
-    let code_contexts = if context_path.exists() {
-        let context_content =
-            std::fs::read_to_string(&context_path).context("Failed to read context.json")?;
-        let context: ContextJson =
-            serde_json::from_str(&context_content).context("Failed to parse context.json")?;
-        context.contexts
+    // Read code_snippets.json (optional, default to empty)
+    let snippets_path = session_dir.join("code_snippets.json");
+    let code_snippets = if snippets_path.exists() {
+        let snippets_content =
+            std::fs::read_to_string(&snippets_path).context("Failed to read code_snippets.json")?;
+        let snippets: CodeSnippetsJson =
+            serde_json::from_str(&snippets_content).context("Failed to parse code_snippets.json")?;
+        snippets.snippets
     } else {
         vec![]
     };
@@ -176,8 +183,8 @@ pub fn load_snapshot(session_dir: &Path) -> Result<ContextSnapshot> {
         session_id: session.id,
         version: session.version,
         limits: session.limits,
-        chat_messages: messages,
-        code_contexts,
+        markdown_context,
+        code_snippets,
     })
 }
 

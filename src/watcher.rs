@@ -41,17 +41,17 @@ impl SessionWatcher {
             .watch(&active_path, RecursiveMode::NonRecursive)
             .context("Failed to watch active.json")?;
 
-        // Watch session directory
+        // Watch session directory (recursively to catch context/ folder changes)
         let session_dir = resolve_active_session(&snek_root)?;
         watcher
-            .watch(&session_dir, RecursiveMode::NonRecursive)
+            .watch(&session_dir, RecursiveMode::Recursive)
             .context("Failed to watch session directory")?;
 
         // Get initial context files to watch
         let initial_snapshot = snapshot.load();
         let mut watched_contexts: HashSet<PathBuf> = HashSet::new();
 
-        for ctx in &initial_snapshot.code_contexts {
+        for ctx in &initial_snapshot.code_snippets {
             if let Ok(uri) = url::Url::parse(&ctx.uri)
                 && let Ok(path) = uri.to_file_path()
                     && watcher.watch(&path, RecursiveMode::NonRecursive).is_ok() {
@@ -84,12 +84,13 @@ async fn watch_loop(
     loop {
         tokio::select! {
             Some(event) = rx.recv() => {
-                // Check if this is a session file or context file
+                // Check if this is a session file, markdown context file, or code snippets file
                 let is_session_file = event.paths.iter().any(|p| {
                     p.ends_with("active.json") ||
                     p.ends_with("session.json") ||
-                    p.ends_with("chat.json") ||
-                    p.ends_with("context.json")
+                    p.ends_with("code_snippets.json") ||
+                    (p.extension().and_then(|s| s.to_str()) == Some("md") && 
+                     p.parent().and_then(|parent| parent.file_name()).and_then(|name| name.to_str()) == Some("context"))
                 });
 
                 if is_session_file {
@@ -140,7 +141,7 @@ fn reload_snapshot(
 
     // Update watched context files
     let new_contexts: HashSet<PathBuf> = new_snapshot
-        .code_contexts
+        .code_snippets
         .iter()
         .filter_map(|ctx| {
             url::Url::parse(&ctx.uri)
@@ -183,7 +184,7 @@ fn update_contexts(
     let mut new_snapshot = (**current).clone();
 
     // Update each changed context
-    for ctx in &mut new_snapshot.code_contexts {
+    for ctx in &mut new_snapshot.code_snippets {
         if let Ok(uri) = url::Url::parse(&ctx.uri)
             && let Ok(path) = uri.to_file_path()
                 && changed_paths.contains(&path)

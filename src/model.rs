@@ -132,7 +132,7 @@ impl ModelClient {
 
 /// Build the message array for the AI model
 ///
-/// Includes system prompt, chat history, code contexts, and current buffer context
+/// Includes system prompt, markdown context, code snippets, and current buffer context
 fn build_messages(
     snapshot: &ContextSnapshot,
     prefix: &str,
@@ -147,33 +147,36 @@ fn build_messages(
         content: "You are an AI code completion assistant. Generate code that naturally continues from the given prefix. Return ONLY the completion code without explanations, markdown formatting, or code fences.".to_string(),
     });
 
-    // Chat history (team conventions, style guides, etc.)
-    for msg in &snapshot.chat_messages {
-        messages.push(OpenAIMessage {
-            role: msg.role.clone(),
-            content: msg.content.clone(),
-        });
-    }
-
-    // Build the final user message with code contexts and current buffer
+    // Build the final user message with contexts and current buffer
     let mut context_msg = String::new();
 
-    // Add code contexts if available
-    if !snapshot.code_contexts.is_empty() {
-        context_msg.push_str("Here are some other code snippets that might help you:\n\n");
-        for (idx, ctx) in snapshot.code_contexts.iter().enumerate() {
+    // Add markdown context if available
+    if !snapshot.markdown_context.is_empty() {
+        eprintln!("[SNEK] Including markdown context: {} chars", snapshot.markdown_context.len());
+        context_msg.push_str("Here is some context you might need:\n\n");
+        context_msg.push_str(&snapshot.markdown_context);
+        context_msg.push_str("\n\n---\n\n");
+    } else {
+        eprintln!("[SNEK] No markdown context available");
+    }
+
+    // Add code snippets if available
+    if !snapshot.code_snippets.is_empty() {
+        eprintln!("[SNEK] Including {} code snippets", snapshot.code_snippets.len());
+        context_msg.push_str("Here are some code snippets that you will need:\n\n");
+        for (idx, snippet) in snapshot.code_snippets.iter().enumerate() {
             context_msg.push_str(&format!(
-                "Context {}:\n  URI: {}\n  Lines: {}-{}\n  Language: {}\n",
+                "Snippet {}:\n  URI: {}\n  Lines: {}-{}\n  Language: {}\n",
                 idx + 1,
-                ctx.uri,
-                ctx.start_line,
-                ctx.end_line,
-                ctx.language_id
+                snippet.uri,
+                snippet.start_line,
+                snippet.end_line,
+                snippet.language_id
             ));
-            if let Some(ref desc) = ctx.description {
+            if let Some(ref desc) = snippet.description {
                 context_msg.push_str(&format!("  Description: {}\n", desc));
             }
-            context_msg.push_str(&format!("  Code:\n```\n{}\n```\n\n", ctx.code));
+            context_msg.push_str(&format!("  Code:\n```\n{}\n```\n\n", snippet.code));
         }
         context_msg.push_str("---\n\n");
     }
