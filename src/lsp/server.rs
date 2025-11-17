@@ -4,6 +4,7 @@
 //! and custom method registration.
 
 use std::sync::Arc;
+use tokio::sync::RwLock;
 
 use anyhow::{Context, Result};
 use arc_swap::ArcSwap;
@@ -16,11 +17,11 @@ use crate::session_io::{find_workspace_root, load_snapshot, resolve_active_sessi
 use crate::watcher::SessionWatcher;
 
 /// Start the LSP server on stdio
-pub async fn serve_stdio() -> Result<()> {
+pub async fn serve_stdio(workspace_dir: Option<std::path::PathBuf>) -> Result<()> {
     eprintln!("[SNEK] Initializing workspace...");
 
     // Find or create .snek/ directory
-    let snek_root = find_workspace_root().context("Failed to find or create .snek/ directory")?;
+    let snek_root = find_workspace_root(workspace_dir).context("Failed to find or create .snek/ directory")?;
     eprintln!("[SNEK] Workspace root: {:?}", snek_root);
 
     // Load active session
@@ -38,21 +39,21 @@ pub async fn serve_stdio() -> Result<()> {
     // Create shared snapshot with ArcSwap
     let snapshot_arc = Arc::new(ArcSwap::from_pointee(snapshot));
 
-    // Start file watcher
+    // Start file watcher for incremental cache updates
     eprintln!("[SNEK] Starting file watcher...");
     let _watcher = SessionWatcher::start(snek_root.clone(), snapshot_arc.clone())?;
 
-    // Initialize model client from environment
-    let api_key =
-        std::env::var("SNEK_API_KEY").context("SNEK_API_KEY environment variable not set")?;
-    
+    // Initialize empty API key - will be loaded from VSCode settings after initialization
+    let api_key = Arc::new(RwLock::new(String::new()));
+
     // Hardcoded API URL and model name
     let api_url = "https://openai-proxy-aifp.onrender.com/v1/chat/completions".to_string();
     let model_name = "glm-4.6".to_string();
 
-    eprintln!("[SNEK] API URL: {}", api_url);
-    eprintln!("[SNEK] Model name: {}", model_name);
-    let model = Arc::new(ModelClient::new(api_url, api_key, model_name));
+    eprintln!("[SNEK] API key will be loaded from VSCode settings after initialization");
+
+    // Create model client (API key will be provided at request time)
+    let model = Arc::new(ModelClient::new(api_url, model_name));
 
     // Create document store
     let documents = Arc::new(DocumentStore::new());
@@ -67,6 +68,7 @@ pub async fn serve_stdio() -> Result<()> {
             snapshot_arc.clone(),
             documents.clone(),
             model.clone(),
+            api_key.clone(),
         )
     })
     .custom_method(
@@ -92,6 +94,7 @@ impl Clone for Backend {
             snapshot: self.snapshot.clone(),
             documents: self.documents.clone(),
             model: self.model.clone(),
+            api_key: self.api_key.clone(),
         }
     }
 }

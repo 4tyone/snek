@@ -4,6 +4,8 @@
 //! including chat messages, code contexts, and configuration.
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::path::PathBuf;
 
 /// A code snippet from another file for context
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -16,13 +18,9 @@ pub struct CodeContext {
     pub end_line: u32,
     /// Language identifier (e.g., "rust", "python")
     pub language_id: String,
-    /// Extracted code content
-    pub code: String,
     /// Optional human-readable description
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    /// Last modification timestamp (RFC3339)
-    pub last_modified: String,
 }
 
 /// Token limits for model completion
@@ -38,6 +36,8 @@ impl Default for Limits {
     }
 }
 
+pub struct Yerevan {}
+
 /// In-memory snapshot of the active session
 #[derive(Clone, Debug)]
 pub struct ContextSnapshot {
@@ -47,10 +47,14 @@ pub struct ContextSnapshot {
     pub version: u64,
     /// Token limits
     pub limits: Limits,
-    /// Markdown context from context/ folder
-    pub markdown_context: String,
+    /// Path to the session directory (for reading context files on-demand)
+    pub session_dir: PathBuf,
     /// Code snippets from other files
     pub code_snippets: Vec<CodeContext>,
+    /// Cache of markdown files: filename -> content
+    pub markdown_cache: HashMap<String, String>,
+    /// Cache of code files: URI -> full file content
+    pub file_cache: HashMap<String, String>,
 }
 
 impl Default for ContextSnapshot {
@@ -59,8 +63,10 @@ impl Default for ContextSnapshot {
             session_id: "default".to_string(),
             version: 0,
             limits: Limits::default(),
-            markdown_context: String::new(),
+            session_dir: PathBuf::new(),
             code_snippets: vec![],
+            markdown_cache: HashMap::new(),
+            file_cache: HashMap::new(),
         }
     }
 }

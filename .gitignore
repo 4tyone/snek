@@ -39,3 +39,4 @@ Cargo.lock
 specs
 .specify
 .cursor
+.claude

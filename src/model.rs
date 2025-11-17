@@ -1,6 +1,5 @@
 //! AI model integration for code completion
 //!
-// 111010011011
 //! This module handles communication with OpenAI-compatible APIs
 //! to generate code completions based on context.
 
@@ -52,17 +51,15 @@ struct OpenAIChoice {
 /// Client for interacting with the AI model
 pub struct ModelClient {
     api_url: String,
-    api_key: String,
     model_name: String,
     http_client: reqwest::Client,
 }
 
 impl ModelClient {
     /// Create a new model client
-    pub fn new(api_url: String, api_key: String, model_name: String) -> Self {
+    pub fn new(api_url: String, model_name: String) -> Self {
         Self {
             api_url,
-            api_key,
             model_name,
             http_client: reqwest::Client::new(),
         }
@@ -75,7 +72,16 @@ impl ModelClient {
         prefix: &str,
         suffix: &str,
         language: &str,
+        api_key: &str,
     ) -> Result<String> {
+        // Check if API key is configured
+        if api_key.is_empty() {
+            anyhow::bail!(
+                "API key not configured. Please add your API key in VSCode settings:\n\
+                File > Preferences > Settings > Search for 'snek.apiKey'"
+            );
+        }
+
         let messages = build_messages(snapshot, prefix, suffix, language);
 
         let request = OpenAIRequest {
@@ -99,7 +105,7 @@ impl ModelClient {
         let response = self
             .http_client
             .post(&self.api_url)
-            .header("Authorization", format!("Bearer {}", self.api_key))
+            .header("Authorization", format!("Bearer {}", api_key))
             .header("Content-Type", "application/json")
             .json(&request)
             .send()
@@ -144,29 +150,48 @@ fn build_messages(
     // System prompt
     messages.push(OpenAIMessage {
         role: "system".to_string(),
-        content: "You are an AI code completion assistant. Generate code that naturally continues from the given prefix. Return ONLY the completion code without explanations, markdown formatting, or code fences.".to_string(),
+        content: "You are an AI code completion assistant.
+        Generate code that naturally continues from the given prefix.
+        The developer trusts you to understand what they are trying to make, and your continuation needs to be very helpful to not get in the way of the developer.
+        IMPORTANT NOTES:
+            1. Preserve the indentation level from the context. Match the indentation of surrounding code.
+            2. Do not repeat existing code blindly, try to understand what the developer whants to write and continue the thought naturally
+        
+        Return ONLY the completion code without explanations, markdown formatting (``` ```), or code fences.
+        You will be given some context - markdown files that tell you about the developer intent, what are they making and what they want to achieve, or general information about the code base, it can be anything, most importantly the data is in natural language, may contain code snippets etc.
+        You will also be given code files that will give you more data about the code base".to_string(),
     });
 
     // Build the final user message with contexts and current buffer
     let mut context_msg = String::new();
 
-    // Add markdown context if available
-    if !snapshot.markdown_context.is_empty() {
-        eprintln!("[SNEK] Including markdown context: {} chars", snapshot.markdown_context.len());
+    // Add markdown context from cache if available
+    if !snapshot.markdown_cache.is_empty() {
+        eprintln!("[SNEK] Including {} markdown files", snapshot.markdown_cache.len());
         context_msg.push_str("Here is some context you might need:\n\n");
-        context_msg.push_str(&snapshot.markdown_context);
-        context_msg.push_str("\n\n---\n\n");
+
+        // Sort keys for consistent ordering
+        let mut filenames: Vec<&String> = snapshot.markdown_cache.keys().collect();
+        filenames.sort();
+
+        for filename in filenames {
+            if let Some(content) = snapshot.markdown_cache.get(filename) {
+                context_msg.push_str(&format!("## {}\n\n", filename));
+                context_msg.push_str(content);
+                context_msg.push_str("\n\n---\n\n");
+            }
+        }
     } else {
         eprintln!("[SNEK] No markdown context available");
     }
 
-    // Add code snippets if available
+    // Add code snippets from cache if available
     if !snapshot.code_snippets.is_empty() {
         eprintln!("[SNEK] Including {} code snippets", snapshot.code_snippets.len());
         context_msg.push_str("Here are some code snippets that you will need:\n\n");
         for (idx, snippet) in snapshot.code_snippets.iter().enumerate() {
             context_msg.push_str(&format!(
-                "Snippet {}:\n  URI: {}\n  Lines: {}-{}\n  Language: {}\n",
+                "Snippet {}:\n\n  URI: {}\n\n  Lines: {}-{}\n\n  Language: {}\n\n",
                 idx + 1,
                 snippet.uri,
                 snippet.start_line,
@@ -176,27 +201,40 @@ fn build_messages(
             if let Some(ref desc) = snippet.description {
                 context_msg.push_str(&format!("  Description: {}\n", desc));
             }
-            context_msg.push_str(&format!("  Code:\n```\n{}\n```\n\n", snippet.code));
+
+            // Get code from cache and extract line range
+            if let Some(full_content) = snapshot.file_cache.get(&snippet.uri) {
+                let lines: Vec<&str> = full_content.lines().collect();
+                let start = snippet.start_line as usize;
+                let end = (snippet.end_line as usize).min(lines.len());
+
+                if start < lines.len() {
+                    let extracted_lines = &lines[start..end];
+                    let code = extracted_lines.join("\n");
+                    context_msg.push_str(&format!("  Code:\n```\n{}\n```\n\n", code));
+                } else {
+                    eprintln!("[SNEK] Warning: Line range {}-{} exceeds file length {} for {}",
+                             start, end, lines.len(), snippet.uri);
+                    context_msg.push_str("  Code: [Invalid line range]\n\n");
+                }
+            } else {
+                eprintln!("[SNEK] Warning: File not in cache: {}", snippet.uri);
+                context_msg.push_str("  Code: [File not in cache]\n\n");
+            }
         }
         context_msg.push_str("---\n\n");
     }
 
-    // Add current buffer context
+    // Add current buffer context with cursor at exact position
     context_msg.push_str(&format!(
-        "Complete the following {} code. The cursor is at <CURSOR>.\n\n",
+        "Complete the following {} code. The cursor is at <CURSOR>. Generate ONLY the code that should be inserted at <CURSOR>. Do not include any explanations or markdown formatting. IMPORTANT: Ensure proper indentation - match the indentation level of the surrounding code context.\n\n",
         language
     ));
-    context_msg.push_str("Code before cursor:\n```\n");
+
+    // Add the code with cursor at the exact position
     context_msg.push_str(prefix);
-    context_msg.push_str("\n```\n\n<CURSOR>\n\n");
-
-    if !suffix.trim().is_empty() {
-        context_msg.push_str("Code after cursor:\n```\n");
-        context_msg.push_str(suffix);
-        context_msg.push_str("\n```\n\n");
-    }
-
-    context_msg.push_str("Generate ONLY the code that should be inserted at <CURSOR>. Do not include any explanations or markdown formatting.");
+    context_msg.push_str("<CURSOR>");
+    context_msg.push_str(suffix);
 
     messages.push(OpenAIMessage {
         role: "user".to_string(),
