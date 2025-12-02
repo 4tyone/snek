@@ -105,7 +105,7 @@ impl Backend {
         // Call AI model
         let completion = self
             .model
-            .complete(&snapshot, &prefix, &suffix, &language, &api_key)
+            .complete(&snapshot, &prefix, &suffix, &language, &uri, &api_key)
             .await
             .map_err(|e| {
                 let error_msg = format!("Model API error: {}", e);
@@ -125,18 +125,24 @@ impl Backend {
         Ok(InlineCompletionResponse { completion })
     }
 
-    /// Load API key configuration from VSCode settings
+    /// Load API key and model configuration from VSCode settings
     async fn load_configuration(&self) -> Result<(), String> {
         // Request configuration from VSCode
-        // The configuration section name should match the extension's configuration key
-        let config_items = vec![ConfigurationItem {
-            scope_uri: None,
-            section: Some("snek.apiKey".to_string()),
-        }];
+        let config_items = vec![
+            ConfigurationItem {
+                scope_uri: None,
+                section: Some("snek.apiKey".to_string()),
+            },
+            ConfigurationItem {
+                scope_uri: None,
+                section: Some("snek.model".to_string()),
+            },
+        ];
 
         match self.client.configuration(config_items).await {
             Ok(configs) => {
-                if let Some(Value::String(api_key)) = configs.first() {
+                // Load API key
+                if let Some(Value::String(api_key)) = configs.get(0) {
                     if !api_key.is_empty() {
                         let mut key = self.api_key.write().await;
                         *key = api_key.clone();
@@ -162,6 +168,14 @@ impl Backend {
                         )
                         .await;
                 }
+
+                // Load model (optional, has default)
+                if let Some(Value::String(model)) = configs.get(1) {
+                    if !model.is_empty() {
+                        eprintln!("[SNEK] Model configured: {}", model);
+                    }
+                }
+
                 Ok(())
             }
             Err(e) => {

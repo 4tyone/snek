@@ -27,20 +27,27 @@ echo -e "${BLUE}╚════════════════════�
 echo ""
 
 # Step 1: Build LSP for macOS Intel
-echo -e "${YELLOW}[1/6]${NC} Building LSP for macOS Intel (x86_64)..."
+echo -e "${YELLOW}[1/7]${NC} Building LSP for macOS Intel (x86_64)..."
 cd "$SCRIPT_DIR"
 cargo build --release --target x86_64-apple-darwin
 echo -e "${GREEN}✓${NC} Built x86_64 binary"
 echo ""
 
 # Step 2: Build LSP for macOS Apple Silicon
-echo -e "${YELLOW}[2/6]${NC} Building LSP for macOS Apple Silicon (aarch64)..."
+echo -e "${YELLOW}[2/7]${NC} Building LSP for macOS Apple Silicon (aarch64)..."
 cargo build --release --target aarch64-apple-darwin
 echo -e "${GREEN}✓${NC} Built aarch64 binary"
 echo ""
 
-# Step 3: Package darwin-x64
-echo -e "${YELLOW}[3/6]${NC} Copying x86_64 binary and packaging darwin-x64 extension..."
+# Step 3: Code sign binaries (ad-hoc signing for distribution)
+echo -e "${YELLOW}[3/7]${NC} Code signing binaries..."
+codesign --force --sign - target/x86_64-apple-darwin/release/snek
+codesign --force --sign - target/aarch64-apple-darwin/release/snek
+echo -e "${GREEN}✓${NC} Signed both binaries (ad-hoc)"
+echo ""
+
+# Step 4: Package darwin-x64
+echo -e "${YELLOW}[4/7]${NC} Copying x86_64 binary and packaging darwin-x64 extension..."
 cp target/x86_64-apple-darwin/release/snek "$VSCODE_EXT_DIR/snek"
 cp target/x86_64-apple-darwin/release/snek "$VSCODE_EXT_DIR/bin/snek"
 cd "$VSCODE_EXT_DIR"
@@ -48,23 +55,23 @@ npx vsce package --target darwin-x64 > /dev/null 2>&1
 echo -e "${GREEN}✓${NC} Packaged darwin-x64 extension"
 echo ""
 
-# Step 4: Package darwin-arm64
-echo -e "${YELLOW}[4/6]${NC} Copying aarch64 binary and packaging darwin-arm64 extension..."
+# Step 5: Package darwin-arm64
+echo -e "${YELLOW}[5/7]${NC} Copying aarch64 binary and packaging darwin-arm64 extension..."
 cp "$SCRIPT_DIR/target/aarch64-apple-darwin/release/snek" "$VSCODE_EXT_DIR/snek"
 cp "$SCRIPT_DIR/target/aarch64-apple-darwin/release/snek" "$VSCODE_EXT_DIR/bin/snek"
 npx vsce package --target darwin-arm64 > /dev/null 2>&1
 echo -e "${GREEN}✓${NC} Packaged darwin-arm64 extension"
 echo ""
 
-# Step 5: Display results
-echo -e "${YELLOW}[5/6]${NC} Verifying binaries..."
+# Step 6: Display results
+echo -e "${YELLOW}[6/7]${NC} Verifying binaries..."
 cd "$SCRIPT_DIR"
 echo "  x86_64: $(file target/x86_64-apple-darwin/release/snek | cut -d: -f2)"
 echo "  aarch64: $(file target/aarch64-apple-darwin/release/snek | cut -d: -f2)"
 echo ""
 
-# Step 6: Show packaged files
-echo -e "${YELLOW}[6/6]${NC} Packaged extensions:"
+# Step 7: Show packaged files
+echo -e "${YELLOW}[7/7]${NC} Packaged extensions:"
 ls -lh "$VSCODE_EXT_DIR"/*.vsix | grep -E "darwin-(x64|arm64)" | awk '{printf "  %s (%s)\n", $9, $5}'
 echo ""
 

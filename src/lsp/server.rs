@@ -46,13 +46,17 @@ pub async fn serve_stdio(workspace_dir: Option<std::path::PathBuf>) -> Result<()
     // Initialize empty API key - will be loaded from VSCode settings after initialization
     let api_key = Arc::new(RwLock::new(String::new()));
 
-    // Hardcoded API URL and model name
-    let api_url = "https://openai-proxy-aifp.onrender.com/v1/chat/completions".to_string();
-    let model_name = "glm-4.6".to_string();
+    // Hardcoded Cerebras API URL - optimized for throughput and latency
+    let api_url = "https://api.cerebras.ai/v1/chat/completions".to_string();
 
+    // Default model - can be overridden in VSCode settings (snek.model)
+    let model_name = "qwen-3-235b-a22b-instruct-2507".to_string();
+
+    eprintln!("[SNEK] Using Cerebras API: {}", api_url);
+    eprintln!("[SNEK] Default model: {}", model_name);
     eprintln!("[SNEK] API key will be loaded from VSCode settings after initialization");
 
-    // Create model client (API key will be provided at request time)
+    // Create model client (API key and model will be provided at request time)
     let model = Arc::new(ModelClient::new(api_url, model_name));
 
     // Create document store
