@@ -1,6 +1,8 @@
-# 🐍 Snek - Lightning-Fast AI Code Completion
-
 <div align="center">
+
+<img src="./assets/logo.png" alt="Snek Logo" width="200"/>
+
+# Snek - Write code, not prompts
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![VS Code](https://img.shields.io/badge/VS%20Code-Extension-blue)](../snek_vscode)
@@ -17,25 +19,24 @@
 
 ## ✨ Features
 
-- ⚡ **Blazing Fast** - Powered by Cerebras's ultra-low latency inference (1800+ tokens/sec)
+- ⚡ **Blazing Fast** - Powered by Cerebras's ultra-low latency inference (1000+ tokens/sec)
 - 🎯 **Context-Aware** - Understands your project structure, coding conventions, and patterns
 - 🔄 **Multi-Language** - Supports Rust, Python, JavaScript, TypeScript, Go, C/C++, Java, and Lua
 - 📝 **Markdown Context** - Add project-specific documentation that the AI uses for better completions
 - 🎨 **Smart Sessions** - Organize different contexts for different tasks or features
-- 🔌 **LSP-Based** - Works with any editor that supports LSP (VSCode, Neovim, Emacs, etc.)
+- 🔌 **LSP-Based** - Works with VSCode and Nvim
 - 🆓 **100% Open Source** - MIT Licensed, no telemetry, runs locally
 
 ## 🚀 Why Cerebras?
 
 Snek uses **Cerebras** exclusively for AI completions because of its unmatched throughput and latency:
 
-- **1,800+ tokens/second** - 10x faster than traditional GPU inference
+- **1,000+ tokens/second** - 10x faster than traditional GPU inference
 - **Sub-100ms latency** - Completions appear instantly as you type
 - **Best UX** - No laggy, stuttering suggestions that break your flow
 
 This makes Snek feel like **magic** - suggestions appear so fast they become part of your natural coding rhythm.
 
-> **Note:** Snek currently only supports Cerebras. While the architecture could support other providers, we've optimized exclusively for Cerebras's speed to deliver the best user experience.
 
 ## 📦 Installation
 
@@ -45,36 +46,47 @@ This makes Snek feel like **magic** - suggestions appear so fast they become par
    ```bash
    # From the marketplace (coming soon)
    # Or install from VSIX
-   code --install-extension snek-lsp-darwin-arm64-0.1.8.vsix  # Apple Silicon Mac
-   code --install-extension snek-lsp-darwin-x64-0.1.8.vsix     # Intel Mac
+   code --install-extension snek-lsp-darwin-arm64-x.x.x.vsix  # Apple Silicon Mac
+   code --install-extension snek-lsp-darwin-x64-x.x.x.vsix     # Intel Mac
+   # No support for other targets for now
    ```
 
 2. **Get a Cerebras API key:**
    - Visit [https://cloud.cerebras.ai/](https://cloud.cerebras.ai/)
    - Sign up and create an API key (free tier available!)
 
-3. **Configure Snek:**
-   - Open VSCode Settings (⌘, on Mac or Ctrl+, on Windows/Linux)
-   - Search for `snek.apiKey`
-   - Paste your Cerebras API key
-   - (Optional) Choose a model in `snek.model` (default: `llama3.1-8b`)
-
-4. **Start coding!** 🎉
 
 ### Neovim
 
-See the [snek-nvim](../snek-nvim) repository for Neovim installation instructions.
+**Using [lazy.nvim](https://github.com/folke/lazy.nvim):**
 
-### Other Editors
+```lua
+{
+  "yourusername/snek-nvim",
+  config = function()
+    require("snek-nvim").setup({
+      api_key = "your-cerebras-api-key",
+      model = "qwen-3-235b-a22b-instruct-2507",  -- Optional, this is the default
+    })
+  end,
+}
+```
 
-Snek is built on the Language Server Protocol (LSP), so it works with any editor that supports LSP:
+**Using [packer.nvim](https://github.com/wbthomason/packer.nvim):**
 
-- **Emacs** - Use `lsp-mode` or `eglot`
-- **Vim** - Use `vim-lsp` or `coc.nvim`
-- **Sublime Text** - Use `LSP` package
-- **IntelliJ/CLion** - Use the LSP support plugin
+```lua
+use {
+  "yourusername/snek-nvim",
+  config = function()
+    require("snek-nvim").setup({
+      api_key = "your-cerebras-api-key",
+      model = "qwen-3-235b-a22b-instruct-2507",
+    })
+  end,
+}
+```
 
-See [INTEGRATION_GUIDE.md](./INTEGRATION_GUIDE.md) for detailed integration instructions.
+See the [snek-nvim repository](../snek-nvim) for full installation and configuration details.
 
 ## ⚙️ Configuration
 
@@ -83,17 +95,55 @@ See [INTEGRATION_GUIDE.md](./INTEGRATION_GUIDE.md) for detailed integration inst
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `snek.apiKey` | `""` | Your Cerebras API key from https://cloud.cerebras.ai/ |
-| `snek.model` | `llama3.1-8b` | Model to use for completions |
+| `snek.model` | `qwen-3-235b-a22b-instruct-2507` | Model to use for completions |
 
-### Available Models
+**Available Models:**
+- `qwen-3-235b-a22b-instruct-2507` (recommended - best quality/speed balance)
+- `llama3.1-8b` (fastest)
+- `llama3.1-70b` (good quality)
+- `llama-3.3-70b` (best quality, slowest)
 
-| Model | Speed | Quality | Best For |
-|-------|-------|---------|----------|
-| `llama3.1-8b` | ⚡⚡⚡ | ⭐⭐⭐ | General coding, rapid iteration |
-| `llama3.1-70b` | ⚡⚡ | ⭐⭐⭐⭐ | Complex logic, better understanding |
-| `llama-3.3-70b` | ⚡ | ⭐⭐⭐⭐⭐ | Best quality, advanced reasoning |
+### Neovim Configuration
 
-**Recommendation:** Start with `llama3.1-8b` for the best balance of speed and quality. The 70B models are slower but provide better context understanding.
+**Full configuration example:**
+
+```lua
+require("snek-nvim").setup({
+  -- Required: Your Cerebras API key
+  api_key = "your-cerebras-api-key",
+
+  -- Optional: Model to use (default shown)
+  model = "qwen-3-235b-a22b-instruct-2507",
+
+  -- Keymaps (defaults shown)
+  keymaps = {
+    accept_suggestion = "<Tab>",     -- Accept the full suggestion
+    clear_suggestion = "<C-]>",      -- Dismiss the suggestion
+    accept_word = "<C-j>",           -- Accept only the next word
+  },
+
+  -- Optional settings
+  ignore_filetypes = { cpp = true }, -- Filetypes to disable completions
+  disable_inline_completion = false, -- Disable ghost text suggestions
+  disable_keymaps = false,           -- Don't set up default keymaps
+  log_level = "info",                -- "off", "trace", "debug", "info", "warn", "error"
+
+  -- Custom suggestion color (optional)
+  color = {
+    suggestion_color = "#808080",
+    cterm = 244,
+  },
+})
+```
+
+**Neovim Commands:**
+- `:SnekStart` - Start the Snek LSP
+- `:SnekStop` - Stop the Snek LSP
+- `:SnekRestart` - Restart the Snek LSP
+- `:SnekToggle` - Toggle the Snek LSP on/off
+- `:SnekStatus` - Show whether Snek is running
+- `:SnekShowLog` - Open the log file
+- `:SnekClearLog` - Clear the log file
 
 ## 🎯 How It Works
 
@@ -260,14 +310,11 @@ All in under 2 seconds from keypress to suggestion!
 git clone https://github.com/yourusername/snek-lsp.git
 cd snek-lsp
 
-# Build the LSP server
-cargo build --release
-
 # Build and package VSCode extension
 ./build_and_package.sh
 
 # Install locally
-code --install-extension ../snek_vscode/snek-lsp-darwin-arm64-0.1.8.vsix
+code --install-extension ../snek_vscode/snek-lsp-darwin-arm64-x.x.x.vsix
 ```
 
 ### Project Structure
@@ -360,12 +407,6 @@ cargo run --release
 7. Push to your fork (`git push origin feature/amazing-feature`)
 8. Open a Pull Request
 
-## 📖 Documentation
-
-- [Integration Guide](./INTEGRATION_GUIDE.md) - Integrate Snek with any LSP-compatible editor
-- [Implementation Status](./IMPLEMENTATION_STATUS.md) - Current development status
-- [Specifications](./specs/001-snek-lsp/) - Original design documents
-
 ## 🔒 Privacy & Security
 
 - **No telemetry** - Snek never sends usage data or analytics
@@ -403,12 +444,6 @@ Your binary architecture doesn't match your Mac:
 - Apple Silicon needs `darwin-arm64` version
 
 Reinstall the correct version for your architecture.
-
-### Completions are slow
-
-1. **Try a faster model** - Use `llama3.1-8b` instead of 70B models
-2. **Reduce context** - Fewer markdown files and code snippets = faster completions
-3. **Check API status** - Visit [Cerebras status page](https://status.cerebras.ai/)
 
 ## 📜 License
 
