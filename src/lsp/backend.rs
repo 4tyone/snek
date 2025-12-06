@@ -1,8 +1,3 @@
-//! LSP backend implementation
-//!
-//! This module implements the Language Server Protocol interface
-//! for the Snek LSP server.
-
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -17,39 +12,26 @@ use crate::document_store::DocumentStore;
 use crate::model::ModelClient;
 use crate::snapshot::ContextSnapshot;
 
-/// Request parameters for snek/inline custom method
 #[derive(Debug, Deserialize)]
 pub struct InlineCompletionParams {
-    /// Document URI
     pub text_document: TextDocumentIdentifier,
-    /// Cursor position
     pub position: Position,
 }
 
-/// Response for snek/inline custom method
 #[derive(Debug, Serialize)]
 pub struct InlineCompletionResponse {
-    /// Generated completion text
     pub completion: String,
 }
 
-
-/// LSP backend state
 pub struct Backend {
-    /// LSP client for sending notifications
     pub client: Client,
-    /// Shared snapshot of session state
     pub snapshot: Arc<ArcSwap<ContextSnapshot>>,
-    /// Document content tracker
     pub documents: Arc<DocumentStore>,
-    /// AI model client
     pub model: Arc<ModelClient>,
-    /// API key (mutable for configuration updates)
     pub api_key: Arc<RwLock<String>>,
 }
 
 impl Backend {
-    /// Create a new backend
     pub fn new(
         client: Client,
         snapshot: Arc<ArcSwap<ContextSnapshot>>,
@@ -66,7 +48,6 @@ impl Backend {
         }
     }
 
-    /// Handle custom snek/inline completion request
     pub async fn handle_inline_completion(
         &self,
         params: InlineCompletionParams,
@@ -80,7 +61,6 @@ impl Backend {
             uri, line, character
         );
 
-        // Get prefix/suffix from document store
         let (prefix, suffix, language) = self
             .documents
             .get_context(&uri, line, character)
@@ -96,13 +76,9 @@ impl Backend {
             suffix.len()
         );
 
-        // Load current snapshot
         let snapshot = self.snapshot.load();
-
-        // Get API key
         let api_key = self.api_key.read().await.clone();
 
-        // Call AI model
         let completion = self
             .model
             .complete(&snapshot, &prefix, &suffix, &language, &uri, &api_key)
@@ -117,7 +93,6 @@ impl Backend {
                 }
             })?;
 
-        // Trim leading/trailing whitespace to avoid newline issues
         let completion = completion.trim_start().to_string();
         
         eprintln!("[SNEK] Completion generated: {} chars", completion.len());
@@ -125,9 +100,7 @@ impl Backend {
         Ok(InlineCompletionResponse { completion })
     }
 
-    /// Load API key and model configuration from VSCode settings
     async fn load_configuration(&self) -> Result<(), String> {
-        // Request configuration from VSCode
         let config_items = vec![
             ConfigurationItem {
                 scope_uri: None,
@@ -141,7 +114,6 @@ impl Backend {
 
         match self.client.configuration(config_items).await {
             Ok(configs) => {
-                // Load API key
                 if let Some(Value::String(api_key)) = configs.get(0) {
                     if !api_key.is_empty() {
                         let mut key = self.api_key.write().await;
@@ -169,10 +141,13 @@ impl Backend {
                         .await;
                 }
 
-                // Load model (optional, has default)
                 if let Some(Value::String(model)) = configs.get(1) {
                     if !model.is_empty() {
+                        self.model.set_model_name(model.clone()).await;
                         eprintln!("[SNEK] Model configured: {}", model);
+                        self.client
+                            .log_message(MessageType::INFO, format!("Snek model set to: {}", model))
+                            .await;
                     }
                 }
 
@@ -194,8 +169,6 @@ impl LanguageServer for Backend {
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
                     TextDocumentSyncKind::FULL,
                 )),
-                // Completion provider REMOVED - we use custom snek/inline method instead
-                // which is called by the extension's InlineCompletionItemProvider with proper debouncing
                 ..Default::default()
             },
             server_info: Some(ServerInfo {
@@ -210,7 +183,6 @@ impl LanguageServer for Backend {
             .log_message(MessageType::INFO, "Snek LSP initialized")
             .await;
 
-        // Request API key configuration from VSCode
         if let Err(e) = self.load_configuration().await {
             self.client
                 .log_message(
@@ -222,7 +194,6 @@ impl LanguageServer for Backend {
     }
 
     async fn did_change_configuration(&self, _params: DidChangeConfigurationParams) {
-        // Reload API key configuration when settings change
         if let Err(e) = self.load_configuration().await {
             self.client
                 .log_message(
@@ -253,12 +224,5 @@ impl LanguageServer for Backend {
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         let uri = params.text_document.uri.to_string();
         self.documents.did_close(&uri);
-    }
-
-    async fn completion(&self, _params: CompletionParams) -> jsonrpc::Result<Option<CompletionResponse>> {
-        // DISABLED: Standard completions are disabled in favor of inline completions
-        // The extension's InlineCompletionItemProvider handles all completions with proper debouncing
-        // to avoid making API calls on every keystroke.
-        Ok(None)
     }
 }

@@ -7,7 +7,6 @@ use std::path::PathBuf;
 async fn main() -> Result<()> {
     eprintln!("[SNEK] Starting Snek Language Server...");
 
-    // Parse command-line arguments
     let args: Vec<String> = env::args().collect();
     let workspace_dir = parse_workspace_dir(&args);
 
@@ -31,21 +30,16 @@ async fn main() -> Result<()> {
 
 
 
-/// Parse workspace directory from command-line arguments
-/// Supports: --workspace-dir=/path or --workspace-dir /path
 fn parse_workspace_dir(args: &[String]) -> Option<PathBuf> {
     for (i, arg) in args.iter().enumerate() {
         if arg == "--workspace-dir" || arg == "--workspace" {
-            // Next argument is the path
             if let Some(path) = args.get(i + 1) {
                 return Some(PathBuf::from(path));
             }
         } else if arg.starts_with("--workspace-dir=") {
-            // Format: --workspace-dir=/path
             let path = arg.strip_prefix("--workspace-dir=").unwrap();
             return Some(PathBuf::from(path));
         } else if arg.starts_with("--workspace=") {
-            // Format: --workspace=/path
             let path = arg.strip_prefix("--workspace=").unwrap();
             return Some(PathBuf::from(path));
         }

@@ -17,17 +17,17 @@
 
 ---
 
-## ✨ Features
+## Features
 
-- ⚡ **Blazing Fast** - Powered by Cerebras's ultra-low latency inference (1000+ tokens/sec)
-- 🎯 **Context-Aware** - Understands your project structure, coding conventions, and patterns
-- 🔄 **Multi-Language** - Supports Rust, Python, JavaScript, TypeScript, Go, C/C++, Java, and Lua
-- 📝 **Markdown Context** - Add project-specific documentation that the AI uses for better completions
-- 🎨 **Smart Sessions** - Organize different contexts for different tasks or features
-- 🔌 **LSP-Based** - Works with VSCode and Nvim
-- 🆓 **100% Open Source** - MIT Licensed, no telemetry, runs locally
+- **Blazing Fast** - Powered by Cerebras's ultra-low latency inference (1000+ tokens/sec)
+- **Context-Aware** - Understands your project structure, coding conventions, and patterns
+- **Multi-Language** - Supports Rust, Python, JavaScript, TypeScript, Go, C/C++, Java, and Lua
+- **Markdown Context** - Add project-specific documentation that the AI uses for better completions
+- **Smart Sessions** - Organize different contexts for different tasks or features
+- **LSP-Based** - Works with VSCode and Nvim
+- **100% Open Source** - MIT Licensed, no telemetry, runs locally
 
-## 🚀 Why Cerebras?
+## Why Cerebras?
 
 Snek uses **Cerebras** exclusively for AI completions because of its unmatched throughput and latency:
 
@@ -38,7 +38,7 @@ Snek uses **Cerebras** exclusively for AI completions because of its unmatched t
 This makes Snek feel like **magic** - suggestions appear so fast they become part of your natural coding rhythm.
 
 
-## 📦 Installation
+## Installation
 
 ### VSCode
 
@@ -62,7 +62,7 @@ This makes Snek feel like **magic** - suggestions appear so fast they become par
 
 ```lua
 {
-  "yourusername/snek-nvim",
+  "4tyone/snek-nvim",
   config = function()
     require("snek-nvim").setup({
       api_key = "your-cerebras-api-key",
@@ -76,7 +76,7 @@ This makes Snek feel like **magic** - suggestions appear so fast they become par
 
 ```lua
 use {
-  "yourusername/snek-nvim",
+  "4tyone/snek-nvim",
   config = function()
     require("snek-nvim").setup({
       api_key = "your-cerebras-api-key",
@@ -86,9 +86,9 @@ use {
 }
 ```
 
-See the [snek-nvim repository](../snek-nvim) for full installation and configuration details.
+See the [snek-nvim repository](https://github.com/4tyone/snek-nvim) for full installation and configuration details.
 
-## ⚙️ Configuration
+## Configuration
 
 ### VSCode Settings
 
@@ -145,7 +145,7 @@ require("snek-nvim").setup({
 - `:SnekShowLog` - Open the log file
 - `:SnekClearLog` - Clear the log file
 
-## 🎯 How It Works
+## How It Works
 
 Snek uses a unique **session-based context system** that makes AI completions actually useful:
 
@@ -160,7 +160,7 @@ your-project/
 │   ├── sessions/
 │   │   └── {session-id}/
 │   │       ├── session.json   # Session config (limits, version)
-│   │       ├── context/       # 📝 Markdown context files
+│   │       ├── context/       # Markdown context files
 │   │       │   ├── architecture.md
 │   │       │   ├── conventions.md
 │   │       │   └── api-patterns.md
@@ -250,7 +250,7 @@ Each session has its own:
 - Code snippets (different relevant files)
 - Token limits (adjust based on complexity)
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────┐
@@ -301,14 +301,14 @@ Each session has its own:
 
 All in under 2 seconds from keypress to suggestion!
 
-## 🛠️ Development
+## Development
 
 ### Building from Source
 
 ```bash
 # Clone the repo
-git clone https://github.com/yourusername/snek-lsp.git
-cd snek-lsp
+git clone https://github.com/4tyone/snek.git
+cd snek
 
 # Build and package VSCode extension
 ./build_and_package.sh
@@ -366,7 +366,7 @@ cargo clippy
 cargo check
 ```
 
-## 🤝 Contributing
+## Contributing
 
 We love contributions! Here's how you can help:
 
@@ -407,7 +407,7 @@ cargo run --release
 7. Push to your fork (`git push origin feature/amazing-feature`)
 8. Open a Pull Request
 
-## 🔒 Privacy & Security
+## Privacy & Security
 
 - **No telemetry** - Snek never sends usage data or analytics
 - **Local processing** - All context stays on your machine
@@ -415,7 +415,7 @@ cargo run --release
 - **Open source** - Every line of code is public and auditable
 - **No account required** - Just get a Cerebras API key and go
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### LSP not starting
 
@@ -445,30 +445,29 @@ Your binary architecture doesn't match your Mac:
 
 Reinstall the correct version for your architecture.
 
-## 📜 License
+## License
 
 MIT License - see [LICENSE](./LICENSE) for details.
 
 You're free to use Snek in personal and commercial projects, modify it, and distribute it.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Cerebras** - For providing the fastest inference infrastructure on the planet
 - **tower-lsp** - Excellent LSP framework for Rust
 - **The Rust Community** - For creating an amazing ecosystem
 
-## 💬 Community & Support
+## Community & Support
 
-- **GitHub Issues** - [Report bugs or request features](https://github.com/yourusername/snek-lsp/issues)
-- **GitHub Discussions** - [Ask questions and share ideas](https://github.com/yourusername/snek-lsp/discussions)
-- **Documentation** - [Read the full integration guide](./INTEGRATION_GUIDE.md)
+- **GitHub Issues** - [Report bugs or request features](https://github.com/4tyone/snek/issues)
+- **GitHub Discussions** - [Ask questions and share ideas](https://github.com/4tyone/snek/discussions)
 
 ---
 
 <div align="center">
 
-**Built with ❤️ by developers, for developers**
+**Built by developers, for developers**
 
-[⭐ Star us on GitHub](https://github.com/yourusername/snek-lsp) | [🐛 Report a Bug](https://github.com/yourusername/snek-lsp/issues) | [💡 Request a Feature](https://github.com/yourusername/snek-lsp/issues/new)
+[Star us on GitHub](https://github.com/4tyone/snek) | [Report a Bug](https://github.com/4tyone/snek/issues) | [Request a Feature](https://github.com/4tyone/snek/issues/new)
 
 </div>
