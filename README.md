@@ -20,12 +20,13 @@
 ## Features
 
 - **Blazing Fast** - Powered by Cerebras's ultra-low latency inference (1000+ tokens/sec)
-- **Context-Aware** - Understands your project structure, coding conventions, and patterns
-- **Multi-Language** - Supports Rust, Python, JavaScript, TypeScript, Go, C/C++, Java, and Lua
-- **Markdown Context** - Add project-specific documentation that the AI uses for better completions
+- **Customizable Context** - User can customize the cotext that Snek gets
+  - **Markdown Context** - Add project-specific documentation that the AI uses for better completions
+  - **Code Context** - Add code URIs and line ranges for Snek to read any relevant code you have
 - **Smart Sessions** - Organize different contexts for different tasks or features
+- **Multi-Language** - Supports Rust, Python, JavaScript, TypeScript, Go, C/C++, Java, and Lua
 - **LSP-Based** - Works with VSCode and Nvim
-- **100% Open Source** - MIT Licensed, no telemetry, runs locally
+- **Open Source** - MIT Licensed, no telemetry, runs locally
 
 ## Why Cerebras?
 
@@ -34,9 +35,6 @@ Snek uses **Cerebras** exclusively for AI completions because of its unmatched t
 - **1,000+ tokens/second** - 10x faster than traditional GPU inference
 - **Sub-100ms latency** - Completions appear instantly as you type
 - **Best UX** - No laggy, stuttering suggestions that break your flow
-
-This makes Snek feel like **magic** - suggestions appear so fast they become part of your natural coding rhythm.
-
 
 ## Installation
 
@@ -97,11 +95,9 @@ See the [snek-nvim repository](https://github.com/4tyone/snek-nvim) for full ins
 | `snek.apiKey` | `""` | Your Cerebras API key from https://cloud.cerebras.ai/ |
 | `snek.model` | `qwen-3-235b-a22b-instruct-2507` | Model to use for completions |
 
-**Available Models:**
-- `qwen-3-235b-a22b-instruct-2507` (recommended - best quality/speed balance)
-- `llama3.1-8b` (fastest)
-- `llama3.1-70b` (good quality)
-- `llama-3.3-70b` (best quality, slowest)
+**Recommended Models:**
+- `qwen-3-235b-a22b-instruct-2507` (recommended - best quality/speed balance and used as a default model)
+- `zai-glm-4.6` (smarter but more expensive)
 
 ### Neovim Configuration
 
@@ -242,7 +238,6 @@ Create different sessions for different tasks or features:
 # Switch between sessions
 .snek/scripts/switch-session.sh a3f92a1c  # First 8 chars of session ID
 
-# Reload your editor to activate the new session
 ```
 
 Each session has its own:
@@ -281,7 +276,7 @@ Each session has its own:
 │   Cerebras API      │
 │   api.cerebras.ai   │
 │                     │
-│   1800+ tokens/sec  │
+│   1000+ tokens/sec  │
 │   Sub-100ms latency │
 └─────────────────────┘
 ```
@@ -295,7 +290,7 @@ Each session has its own:
    - Markdown context files from active session
    - Referenced code snippets
 4. **Snek builds prompt** with all context
-5. **Cerebras generates completion** in <100ms
+5. **Cerebras generates completion** in <800ms
 6. **Snek extracts code** (removes markdown fences, explanations)
 7. **Editor shows inline suggestion** to user
 
@@ -386,10 +381,6 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 # Install cross-compilation targets (macOS only)
 rustup target add x86_64-apple-darwin aarch64-apple-darwin
-
-# Install Node.js dependencies for VSCode extension
-cd ../snek_vscode
-npm install
 
 # Run LSP locally (for testing)
 cd ../snek_lsp
