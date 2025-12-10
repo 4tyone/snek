@@ -38,3 +38,5 @@ feat(session): add hot-reload for session switching
 ```
 
 4. Present the draft to user for approval or modification.
+
+IMPORTANT: Do NOT include "Generated with Claude Code" or any AI attribution in the commit message.
