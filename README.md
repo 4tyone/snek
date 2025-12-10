@@ -13,7 +13,7 @@
 
 [Features](#features) • [Installation](#installation) • [Configuration](#configuration) • [Slash Commands](#slash-commands-for-ai-agents) • [How It Works](#how-it-works) • [Contributing](#contributing)
 
-<video src="./assets/snek_demo_small.mp4" width="800" autoplay loop muted></video>
+<img src="./assets/snek_demo_gif.gif" alt="Snek Demo" width="800"/>
 
 </div>
 
