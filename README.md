@@ -5,13 +5,13 @@
 # Snek - Write code, not prompts
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![VS Code](https://img.shields.io/badge/VS%20Code-Extension-blue)](../snek_vscode)
-[![Neovim](https://img.shields.io/badge/Neovim-Plugin-green)](../snek-nvim)
+[![VS Code](https://img.shields.io/badge/VS%20Code-Extension-blue)](https://github.com/4tyone/snek_vscode)
+[![Neovim](https://img.shields.io/badge/Neovim-Plugin-green)](https://github.com/4tyone/snek_nvim)
 [![Rust](https://img.shields.io/badge/Rust-1.70%2B-orange)](https://www.rust-lang.org/)
 
 **Context-aware AI code completions powered by Cerebras - The fastest inference on the planet**
 
-[Features](#-features) • [Installation](#-installation) • [Configuration](#%EF%B8%8F-configuration) • [How It Works](#-how-it-works) • [Contributing](#-contributing)
+[Features](#features) • [Installation](#installation) • [Configuration](#configuration) • [Slash Commands](#slash-commands-for-ai-agents) • [How It Works](#how-it-works) • [Contributing](#contributing)
 
 </div>
 
@@ -140,6 +140,106 @@ require("snek-nvim").setup({
 - `:SnekStatus` - Show whether Snek is running
 - `:SnekShowLog` - Open the log file
 - `:SnekClearLog` - Clear the log file
+
+## Slash Commands for AI Agents
+
+Snek provides a library of slash commands designed for AI coding agents like Claude Code, Cursor, Windsurf, and others. These commands extend your agent's capabilities with code analysis, git operations, and session management.
+
+### Installation
+
+Copy the `templates/commands/` and `templates/scripts/` folders into your agent's configuration directory:
+
+```bash
+# For Claude Code
+cp -r templates/commands/ .claude/commands/
+cp -r templates/scripts/ .claude/scripts/
+
+# For other agents, use their respective config directory
+# e.g., .cursor/, .windsurf/, etc.
+```
+
+After copying, the commands will appear in your agent's slash command menu.
+
+### The `/snek.fill` Command
+
+Beyond tab-completion, Snek provides a powerful code generation workflow via the `/snek.fill` command. Mark regions in your code with `@@snek ... snek@@` blocks containing natural language specifications:
+
+```go
+func ValidateEmail(email string) error {
+    // @@snek
+    // Validate email format using regex
+    // Return error if invalid, nil if valid
+    // snek@@
+}
+```
+
+```python
+# @@snek modify this to also accept a timeout parameter
+def fetch_data(url):
+    response = requests.get(url)
+    return response.json()
+# snek@@
+```
+
+```go
+// @@snek implement this following the pattern in @internal/repository/user.go
+func (r *OrderRepository) FindByID(id string) (*Order, error) {
+// snek@@
+}
+```
+
+Run `/snek.fill` and the agent will:
+1. Parse all `@@snek` blocks in the codebase
+2. Read referenced files (via `@path/to/file` syntax)
+3. Generate code matching your specifications
+4. Replace the blocks with implemented code
+
+### Developer Commands
+
+**Code Analysis:**
+| Command | Description |
+|---------|-------------|
+| `/snek.outline` | Show file structure (functions, classes, structs) |
+| `/snek.deps` | Display imports and dependencies |
+| `/snek.callers` | Find all places a function is called |
+| `/snek.refs` | Find references to a symbol |
+| `/snek.explain` | Explain code at a location |
+| `/snek.complexity` | Analyze cyclomatic complexity and nesting |
+
+**Git Operations:**
+| Command | Description |
+|---------|-------------|
+| `/snek.status` | Show git status |
+| `/snek.diff` | Show and explain git diff |
+| `/snek.commits` | List recent commits |
+| `/snek.blame` | Show who modified each line |
+| `/snek.commit.draft` | Draft a commit message |
+
+**Documentation & Testing:**
+| Command | Description |
+|---------|-------------|
+| `/snek.doc.function` | Generate function documentation |
+| `/snek.doc.file` | Generate module/file documentation |
+| `/snek.test.generate` | Generate tests for a function |
+| `/snek.todo` | Find TODOs in codebase |
+
+**Refactoring:**
+| Command | Description |
+|---------|-------------|
+| `/snek.refactor.extract` | Extract code into a function |
+| `/snek.refactor.rename` | Rename a symbol across the codebase |
+
+**Session Management:**
+| Command | Description |
+|---------|-------------|
+| `/snek.session.new` | Create a new session |
+| `/snek.session.switch` | Switch to a different session |
+| `/snek.session.list` | List all sessions |
+| `/snek.session.info` | Show active session details |
+| `/snek.context.add` | Add context to session |
+| `/snek.context.show` | Show all context in session |
+
+---
 
 ## How It Works
 
