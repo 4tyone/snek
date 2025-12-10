@@ -42,19 +42,13 @@ Snek uses **Cerebras** exclusively for AI completions because of its unmatched t
 
 ### VSCode
 
-1. **Install the extension:**
-   ```bash
-   # From the marketplace (coming soon)
-   # Or install from VSIX
-   code --install-extension snek-lsp-darwin-arm64-x.x.x.vsix  # Apple Silicon Mac
-   code --install-extension snek-lsp-darwin-x64-x.x.x.vsix     # Intel Mac
-   # No support for other targets for now
-   ```
+1. **Install the extension** from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Mels.snek-lsp)
 
 2. **Get a Cerebras API key:**
    - Visit [https://cloud.cerebras.ai/](https://cloud.cerebras.ai/)
    - Sign up and create an API key (free tier available!)
-
+  
+3. **Read about configuration below**
 
 ### Neovim
 
@@ -149,12 +143,12 @@ Snek provides a library of slash commands designed for AI coding agents like Cla
 
 ### Installation
 
-Copy the `templates/commands/` and `templates/scripts/` folders into your agent's configuration directory:
+Copy the `.snek/commands/` and `.snek/scripts/` folders into your agent's configuration directory:
 
 ```bash
 # For Claude Code
-cp -r templates/commands/ .claude/commands/
-cp -r templates/scripts/ .claude/scripts/
+cp -r .snek/commands/ .claude/commands/
+cp -r .snek/scripts/ .claude/scripts/
 
 # For other agents, use their respective config directory
 # e.g., .cursor/, .windsurf/, etc.
@@ -164,7 +158,7 @@ After copying, the commands will appear in your agent's slash command menu.
 
 ### The `/snek.fill` Command
 
-Beyond tab-completion, Snek provides a powerful code generation workflow via the `/snek.fill` command. Mark regions in your code with `@@snek ... snek@@` blocks containing natural language specifications:
+Beyond tab-completion, Snek provides a powerful code generation workflow via the `/snek.fill` command. Mark regions in your code with `@@snek ... snek@@` blocks containing natural language specifications. This command helps you stay in your flow, instead of braking it to prompt your agent, you can just write something similar to TODO tags and ask your agent to implement them one by one. Writing the tags helps you keep the mental model for the code base.
 
 ```go
 func ValidateEmail(email string) error {
@@ -243,7 +237,7 @@ Run `/snek.fill` and the agent will:
 
 ---
 
-## How It Works
+## How Tab-completion Works
 
 Snek uses a unique **session-based context system** that makes AI completions actually useful:
 
@@ -340,6 +334,7 @@ Create different sessions for different tasks or features:
 # Switch between sessions
 .snek/scripts/switch-session.sh a3f92a1c  # First 8 chars of session ID
 
+# Or just use the commands
 ```
 
 Each session has its own:
@@ -398,22 +393,6 @@ Each session has its own:
 
 All in under 2 seconds from keypress to suggestion!
 
-## Development
-
-### Building from Source
-
-```bash
-# Clone the repo
-git clone https://github.com/4tyone/snek.git
-cd snek
-
-# Build and package VSCode extension
-./build_and_package.sh
-
-# Install locally
-code --install-extension ../snek_vscode/snek-lsp-darwin-arm64-x.x.x.vsix
-```
-
 ### Project Structure
 
 ```
@@ -435,32 +414,6 @@ snek-lsp/
 │   └── commands/
 │       └── snek.share.md
 └── build_and_package.sh      # Build script for all platforms
-```
-
-### Running Tests
-
-```bash
-# Run all tests
-cargo test
-
-# Run with output
-cargo test -- --nocapture
-
-# Run specific test
-cargo test session_io
-```
-
-### Code Quality
-
-```bash
-# Format code
-cargo fmt
-
-# Run linter
-cargo clippy
-
-# Check compilation without building
-cargo check
 ```
 
 ## Contributing
