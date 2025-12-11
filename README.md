@@ -139,7 +139,7 @@ require("snek-nvim").setup({
 
 ## Slash Commands for AI Agents
 
-Snek provides a library of slash commands designed for AI coding agents like Claude Code, Cursor, Windsurf, and others. These commands extend your agent's capabilities with code analysis, git operations, and session management.
+Snek provides a library of slash commands designed for AI coding agents like Claude Code, Codex, Gemini CLI and other CLI coding agents. These commands extend your agent's capabilities with code analysis, git operations, and session management.
 
 ### Installation
 
@@ -151,7 +151,6 @@ cp -r .snek/commands/ .claude/commands/
 cp -r .snek/scripts/ .claude/scripts/
 
 # For other agents, use their respective config directory
-# e.g., .cursor/, .windsurf/, etc.
 ```
 
 After copying, the commands will appear in your agent's slash command menu.

@@ -104,9 +104,55 @@ fn initialize_default_session(snek_root: &Path) -> Result<()> {
         serde_json::to_string_pretty(&active)?,
     )?;
 
+    // Scripts
     write_script_file(snek_root, "scripts/new-session.sh", include_str!("../templates/scripts/new-session.sh"))?;
     write_script_file(snek_root, "scripts/switch-session.sh", include_str!("../templates/scripts/switch-session.sh"))?;
+    write_script_file(snek_root, "scripts/add-code-snippet.sh", include_str!("../templates/scripts/add-code-snippet.sh"))?;
+    write_script_file(snek_root, "scripts/add-context-file.sh", include_str!("../templates/scripts/add-context-file.sh"))?;
+    write_script_file(snek_root, "scripts/clear-context.sh", include_str!("../templates/scripts/clear-context.sh"))?;
+    write_script_file(snek_root, "scripts/clone-session.sh", include_str!("../templates/scripts/clone-session.sh"))?;
+    write_script_file(snek_root, "scripts/get-active-session.sh", include_str!("../templates/scripts/get-active-session.sh"))?;
+    write_script_file(snek_root, "scripts/get-file-outline.sh", include_str!("../templates/scripts/get-file-outline.sh"))?;
+    write_script_file(snek_root, "scripts/get-git-diff.sh", include_str!("../templates/scripts/get-git-diff.sh"))?;
+    write_script_file(snek_root, "scripts/get-git-status.sh", include_str!("../templates/scripts/get-git-status.sh"))?;
+    write_script_file(snek_root, "scripts/get-imports.sh", include_str!("../templates/scripts/get-imports.sh"))?;
+    write_script_file(snek_root, "scripts/get-recent-commits.sh", include_str!("../templates/scripts/get-recent-commits.sh"))?;
+    write_script_file(snek_root, "scripts/list-context.sh", include_str!("../templates/scripts/list-context.sh"))?;
+    write_script_file(snek_root, "scripts/list-sessions.sh", include_str!("../templates/scripts/list-sessions.sh"))?;
+    write_script_file(snek_root, "scripts/remove-code-snippet.sh", include_str!("../templates/scripts/remove-code-snippet.sh"))?;
+    write_script_file(snek_root, "scripts/remove-context-file.sh", include_str!("../templates/scripts/remove-context-file.sh"))?;
+    write_script_file(snek_root, "scripts/snek-parse.sh", include_str!("../templates/scripts/snek-parse.sh"))?;
+
+    // Commands
     write_script_file(snek_root, "commands/snek.share.md", include_str!("../templates/commands/snek.share.md"))?;
+    write_script_file(snek_root, "commands/snek.blame.md", include_str!("../templates/commands/snek.blame.md"))?;
+    write_script_file(snek_root, "commands/snek.callers.md", include_str!("../templates/commands/snek.callers.md"))?;
+    write_script_file(snek_root, "commands/snek.commit.draft.md", include_str!("../templates/commands/snek.commit.draft.md"))?;
+    write_script_file(snek_root, "commands/snek.commits.md", include_str!("../templates/commands/snek.commits.md"))?;
+    write_script_file(snek_root, "commands/snek.complexity.md", include_str!("../templates/commands/snek.complexity.md"))?;
+    write_script_file(snek_root, "commands/snek.context.add.md", include_str!("../templates/commands/snek.context.add.md"))?;
+    write_script_file(snek_root, "commands/snek.context.clear.md", include_str!("../templates/commands/snek.context.clear.md"))?;
+    write_script_file(snek_root, "commands/snek.context.read.md", include_str!("../templates/commands/snek.context.read.md"))?;
+    write_script_file(snek_root, "commands/snek.context.remove.md", include_str!("../templates/commands/snek.context.remove.md"))?;
+    write_script_file(snek_root, "commands/snek.context.show.md", include_str!("../templates/commands/snek.context.show.md"))?;
+    write_script_file(snek_root, "commands/snek.deps.md", include_str!("../templates/commands/snek.deps.md"))?;
+    write_script_file(snek_root, "commands/snek.diff.md", include_str!("../templates/commands/snek.diff.md"))?;
+    write_script_file(snek_root, "commands/snek.doc.file.md", include_str!("../templates/commands/snek.doc.file.md"))?;
+    write_script_file(snek_root, "commands/snek.doc.function.md", include_str!("../templates/commands/snek.doc.function.md"))?;
+    write_script_file(snek_root, "commands/snek.explain.md", include_str!("../templates/commands/snek.explain.md"))?;
+    write_script_file(snek_root, "commands/snek.fill.md", include_str!("../templates/commands/snek.fill.md"))?;
+    write_script_file(snek_root, "commands/snek.outline.md", include_str!("../templates/commands/snek.outline.md"))?;
+    write_script_file(snek_root, "commands/snek.refactor.extract.md", include_str!("../templates/commands/snek.refactor.extract.md"))?;
+    write_script_file(snek_root, "commands/snek.refactor.rename.md", include_str!("../templates/commands/snek.refactor.rename.md"))?;
+    write_script_file(snek_root, "commands/snek.refs.md", include_str!("../templates/commands/snek.refs.md"))?;
+    write_script_file(snek_root, "commands/snek.session.clone.md", include_str!("../templates/commands/snek.session.clone.md"))?;
+    write_script_file(snek_root, "commands/snek.session.info.md", include_str!("../templates/commands/snek.session.info.md"))?;
+    write_script_file(snek_root, "commands/snek.session.list.md", include_str!("../templates/commands/snek.session.list.md"))?;
+    write_script_file(snek_root, "commands/snek.session.new.md", include_str!("../templates/commands/snek.session.new.md"))?;
+    write_script_file(snek_root, "commands/snek.session.switch.md", include_str!("../templates/commands/snek.session.switch.md"))?;
+    write_script_file(snek_root, "commands/snek.status.md", include_str!("../templates/commands/snek.status.md"))?;
+    write_script_file(snek_root, "commands/snek.test.generate.md", include_str!("../templates/commands/snek.test.generate.md"))?;
+    write_script_file(snek_root, "commands/snek.todo.md", include_str!("../templates/commands/snek.todo.md"))?;
 
     Ok(())
 }
