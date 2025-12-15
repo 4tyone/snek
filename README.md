@@ -2,20 +2,34 @@
 
 <img src="./assets/logo.png" alt="Snek Logo" width="200"/>
 
-# Snek - Write code, not prompts
+# Snek - AI tab-completion with customizable context
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![VS Code](https://img.shields.io/badge/VS%20Code-Extension-blue)](https://github.com/4tyone/snek_vscode)
 [![Neovim](https://img.shields.io/badge/Neovim-Plugin-green)](https://github.com/4tyone/snek_nvim)
 [![Rust](https://img.shields.io/badge/Rust-1.70%2B-orange)](https://www.rust-lang.org/)
 
-**Context-aware AI code completions powered by Cerebras - The fastest inference on the planet**
-
 [Features](#features) • [Installation](#installation) • [Configuration](#configuration) • [Slash Commands](#slash-commands-for-ai-agents) • [How It Works](#how-it-works) • [Contributing](#contributing)
 
 <img src="./assets/snek_demo_gif.gif" alt="Snek Demo" width="800"/>
 
 </div>
+
+---
+
+## Before Snek
+
+AI tab-completion tools are everywhere, but they all share the same frustrating limitation: **you can't control what context they see**. They guess what's relevant based on your open files, often missing the patterns, conventions, and architecture decisions that matter most. The result? Generic suggestions that don't match your codebase, forcing you to rewrite or reject most completions.
+
+## After Snek
+
+Snek gives you full control over your AI's context. Instead of hoping the AI figures out your codebase, you tell it exactly what it needs to know:
+
+- **Add markdown files** describing your architecture, conventions, and patterns
+- **Reference specific code snippets** the AI should learn from
+- **Create sessions** for different tasks, each with its own curated context
+
+When Snek knows your error handling pattern, your naming conventions, and your API structure, it stops suggesting generic code and starts suggesting *your* code.
 
 ---
 
