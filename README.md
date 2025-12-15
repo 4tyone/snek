@@ -4,7 +4,7 @@
 
 # Snek - AI tab-completion with customizable context
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![VS Code](https://img.shields.io/badge/VS%20Code-Extension-blue)](https://github.com/4tyone/snek_vscode)
 [![Neovim](https://img.shields.io/badge/Neovim-Plugin-green)](https://github.com/4tyone/snek_nvim)
 [![Rust](https://img.shields.io/badge/Rust-1.70%2B-orange)](https://www.rust-lang.org/)
@@ -42,7 +42,7 @@ When Snek knows your error handling pattern, your naming conventions, and your A
 - **Smart Sessions** - Organize different contexts for different tasks or features
 - **Multi-Language** - Supports Rust, Python, JavaScript, TypeScript, Go, C/C++, Java, and Lua
 - **LSP-Based** - Works with VSCode and Nvim
-- **Open Source** - MIT Licensed, no telemetry, runs locally
+- **Open Source** - Apache-2.0 Licensed, no telemetry, runs locally
 
 ## Why Cerebras?
 
@@ -506,7 +506,7 @@ Reinstall the correct version for your architecture.
 
 ## License
 
-MIT License - see [LICENSE](./LICENSE) for details.
+Apache License 2.0 - see [LICENSE](./LICENSE) for details.
 
 You're free to use Snek in personal and commercial projects, modify it, and distribute it.
 
