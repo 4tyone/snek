@@ -6,7 +6,7 @@
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![VS Code](https://img.shields.io/badge/VS%20Code-Extension-blue)](https://github.com/4tyone/snek_vscode)
-[![Neovim](https://img.shields.io/badge/Neovim-Plugin-green)](https://github.com/4tyone/snek_nvim)
+[![Neovim](https://img.shields.io/badge/Neovim-Plugin-green)](https://github.com/4tyone/snek-nvim)
 [![Rust](https://img.shields.io/badge/Rust-1.70%2B-orange)](https://www.rust-lang.org/)
 
 [Features](#features) • [Installation](#installation) • [Configuration](#configuration) • [Slash Commands](#slash-commands-for-ai-agents) • [How It Works](#how-it-works) • [Contributing](#contributing)
